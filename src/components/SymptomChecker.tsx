@@ -33,6 +33,7 @@ import { Checkbox } from "./ui/checkbox";
 import { Slider } from "./ui/slider";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
+import { PageHeader } from "./ui/page-header";
 
 interface DeviceInfo {
   isMobile: boolean;
@@ -1293,56 +1294,24 @@ export function SymptomChecker({
   return (
     <div className="h-full flex flex-col">
       {/* 헤더 */}
-      <div className="gradient-primary p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-cyan-500/20"></div>
-        <div className="relative z-10">
-          <h1
-            className={`text-2xl font-bold text-primary-foreground mb-2 flex items-center gap-3 ${
-              isMobile ? "text-xl" : "text-2xl"
-            }`}
-          >
-            <Target className={`${isMobile ? "w-5 h-5" : "w-6 h-6"}`} />
-            질병 예측
-            <Badge
-              variant="outline"
-              className="text-xs bg-blue-500/20 text-primary-foreground border-blue-500/30"
-            >
-              <Zap className="w-3 h-3 mr-1" />
-              SNOMED CT 기반
-            </Badge>
-          </h1>
-          <p
-            className={`text-primary-foreground/80 ${
-              isMobile ? "text-sm" : "text-base"
-            }`}
-          >
-            포괄적인 증상 체크로 가능한 질병을 예측하고 맞춤 조언을 받아보세요
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge
-              variant="outline"
-              className="text-xs bg-green-500/20 text-primary-foreground border-green-500/30"
-            >
-              10개 전문 분야
-            </Badge>
-            <Badge
-              variant="outline"
-              className="text-xs bg-purple-500/20 text-primary-foreground border-purple-500/30"
-            >
-              {bodyParts.reduce(
-                (total, part) => total + part.commonSymptoms.length,
-                0
-              )}
-              개 증상
-            </Badge>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="질병 예측"
+        icon={Target}
+        description="포괄적인 증상 체크로 가능한 질병을 예측하고 맞춤 조언을 받아보세요"
+        gradient="cyan"
+        badges={[
+          {
+            label: "SNOMED CT",
+            icon: Zap,
+            color: "bg-blue-500/20 text-primary-foreground border-blue-500/30",
+          },
+        ]}
+      />
 
       <div
         className={`flex-1 overflow-auto ${
           isMobile
-            ? "p-4 pb-32" // 모바일: 하단 네비게이션(80px) + 고정 버튼(96px) + 여유공간
+            ? "p-4" // 모바일: 하단 네비게이션(80px) + 고정 버튼(96px) + 여유공간
             : "p-6 pb-24" // 데스크톱: 기존 패딩
         }`}
       >
@@ -1353,45 +1322,53 @@ export function SymptomChecker({
         >
           <TabsList
             className={`grid w-full grid-cols-4 mb-6 ${
-              isMobile ? "text-xs p-1" : ""
+              isMobile ? "text-xs p-1 h-auto min-h-[60px]" : ""
             }`}
           >
             <TabsTrigger
               value="select"
               className={`flex items-center gap-2 ${
-                isMobile ? "flex-col gap-1 p-2" : ""
+                isMobile ? "flex-col gap-0.5 p-1.5 h-auto min-h-[56px]" : ""
               }`}
             >
-              <Target className="w-4 h-4" />
-              <span className={isMobile ? "text-xs" : ""}>증상 선택</span>
+              <Target className={`${isMobile ? "w-3 h-3" : "w-4 h-4"}`} />
+              <span className={isMobile ? "text-xs leading-tight" : ""}>
+                증상 선택
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="search"
               className={`flex items-center gap-2 ${
-                isMobile ? "flex-col gap-1 p-2" : ""
+                isMobile ? "flex-col gap-0.5 p-1.5 h-auto min-h-[56px]" : ""
               }`}
             >
-              <Search className="w-4 h-4" />
-              <span className={isMobile ? "text-xs" : ""}>빠른 검색</span>
+              <Search className={`${isMobile ? "w-3 h-3" : "w-4 h-4"}`} />
+              <span className={isMobile ? "text-xs leading-tight" : ""}>
+                빠른 검색
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="review"
               className={`flex items-center gap-2 ${
-                isMobile ? "flex-col gap-1 p-2" : ""
+                isMobile ? "flex-col gap-0.5 p-1.5 h-auto min-h-[56px]" : ""
               }`}
             >
-              <CheckCircle className="w-4 h-4" />
-              <span className={isMobile ? "text-xs" : ""}>상세 정보</span>
+              <CheckCircle className={`${isMobile ? "w-3 h-3" : "w-4 h-4"}`} />
+              <span className={isMobile ? "text-xs leading-tight" : ""}>
+                상세 정보
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="results"
               disabled={!analysisResult}
               className={`flex items-center gap-2 ${
-                isMobile ? "flex-col gap-1 p-2" : ""
+                isMobile ? "flex-col gap-0.5 p-1.5 h-auto min-h-[56px]" : ""
               }`}
             >
-              <TrendingUp className="w-4 h-4" />
-              <span className={isMobile ? "text-xs" : ""}>예측 결과</span>
+              <TrendingUp className={`${isMobile ? "w-3 h-3" : "w-4 h-4"}`} />
+              <span className={isMobile ? "text-xs leading-tight" : ""}>
+                예측 결과
+              </span>
             </TabsTrigger>
           </TabsList>
 
@@ -2309,7 +2286,7 @@ export function SymptomChecker({
           </TabsContent>
         </Tabs>
       </div>
-
+      <div className="h-20" />
       {/* 하단 고정 버튼 (모바일) */}
       {isMobile && selectedSymptoms.length > 0 && activeTab !== "results" && (
         <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">

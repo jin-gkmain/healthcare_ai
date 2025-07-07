@@ -77,14 +77,14 @@ export function WellnessCoach() {
   return (
     <div className="h-full flex flex-col">
       {/* 헤더 */}
-      <div className="gradient-primary p-6 relative overflow-hidden">
+      <div className="gradient-primary p-3 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-green-500/20"></div>
         <div className="relative z-10">
-          <h1 className="text-2xl font-bold text-primary-foreground mb-2 flex items-center gap-3">
-            <Bot className="w-6 h-6" />
+          <h1 className="text-lg font-bold text-primary-foreground mb-1 flex items-center gap-2">
+            <Bot className="w-4 h-4" />
             웰니스 코치
           </h1>
-          <p className="text-primary-foreground/80">
+          <p className="text-sm text-primary-foreground/80">
             AI 코치가 당신만의 건강 여정을 함께합니다
           </p>
         </div>

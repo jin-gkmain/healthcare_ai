@@ -158,14 +158,14 @@ export function SmartInsights() {
   return (
     <div className="h-full flex flex-col">
       {/* 헤더 */}
-      <div className="gradient-primary p-6 relative overflow-hidden">
+      <div className="gradient-primary p-3 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-cyan-500/20"></div>
         <div className="relative z-10">
-          <h1 className="text-2xl font-bold text-primary-foreground mb-2 flex items-center gap-3">
-            <Brain className="w-6 h-6" />
+          <h1 className="text-lg font-bold text-primary-foreground mb-1 flex items-center gap-2">
+            <Brain className="w-4 h-4" />
             스마트 인사이트
           </h1>
-          <p className="text-primary-foreground/80">
+          <p className="text-sm text-primary-foreground/80">
             AI가 분석한 당신만의 건강 패턴과 예측
           </p>
         </div>

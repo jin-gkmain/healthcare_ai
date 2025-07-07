@@ -44,6 +44,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
+import { PageHeader } from "./ui/page-header";
 import { fetchVoiceResponse } from "../services/chatAPI";
 
 // 마이크 권한 상태 타입
@@ -1678,8 +1679,34 @@ export function VoiceQuestion() {
     const permission = await requestMicrophonePermission();
     if (permission === "granted") {
       setIsPermissionModalOpen(false);
-      // 페이지 새로고침으로 음성 인식 재초기화
-      window.location.reload();
+      // 페이지 새로고침 대신 음성 인식 재초기화
+      // 약간의 지연 후 음성 인식 재초기화 (권한 적용 시간)
+      setTimeout(() => {
+        // 브라우저 지원 재감지
+        const support = detectBrowserSupport();
+        setBrowserSupport(support);
+
+        // 에러 상태 초기화
+        setError(null);
+
+        // 모바일에서 음성 합성 활성화
+        if (support.isMobile) {
+          fullyActivateMobileSpeech().then((activated) => {
+            const platform = support.isIOS
+              ? "iOS"
+              : support.isAndroid
+              ? "Android"
+              : "Mobile";
+            console.log(
+              `📱 ${platform} 권한 허용 후 음성 활성화 결과:`,
+              activated
+            );
+          });
+        }
+
+        // 성공 메시지 표시
+        console.log("✅ 마이크 권한 허용 완료 - 음성 질문 기능 사용 가능");
+      }, 100);
     }
   };
 
@@ -1843,7 +1870,7 @@ export function VoiceQuestion() {
                   <p>• 브라우저 주소창 옆 🔒 아이콘 클릭/터치</p>
                   <p>• "마이크" 또는 "Microphone" 설정 변경</p>
                   <p>• "허용" 또는 "Allow" 선택</p>
-                  <p>• 페이지 새로고침</p>
+                  <p>• 아래 버튼으로 권한 재확인</p>
                 </div>
               </div>
 
@@ -1885,48 +1912,38 @@ export function VoiceQuestion() {
       </Dialog>
 
       {/* 헤더 */}
-      <div className="gradient-primary p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-cyan-500/20"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl font-bold text-primary-foreground mb-2 flex items-center gap-3">
-            <Mic className="w-6 h-6" />
-            음성 질문
-            <Badge
-              variant="outline"
-              className="text-xs bg-green-500/20 text-primary-foreground border-green-500/30"
-            >
-              <Zap className="w-3 h-3 mr-1" />
-              음성 전용 AI
-            </Badge>
-            {micPermission === "granted" && (
-              <Badge
-                variant="outline"
-                className="text-xs bg-green-500/20 text-primary-foreground border-green-500/30"
-              >
-                <ShieldCheck className="w-3 h-3 mr-1" />
-                권한 허용됨
-              </Badge>
-            )}
-            {browserSupport?.isMobile && mobileSpeechReady && (
-              <Badge
-                variant="outline"
-                className="text-xs bg-blue-500/20 text-primary-foreground border-blue-500/30"
-              >
-                📱 {browserSupport.isIOS ? "iOS" : "Android"} 완전준비
-              </Badge>
-            )}
-          </h1>
-          <p className="text-primary-foreground/80">
-            {micPermission === "granted"
-              ? browserSupport?.isMobile
-                ? "마이크 버튼을 터치해서 질문하면 AI가 음성으로만 답변합니다"
-                : "마이크 버튼을 눌러 질문하면 AI가 음성으로만 답변합니다"
-              : "음성 질문을 사용하려면 마이크 권한이 필요합니다"}
-          </p>
-        </div>
+      <div className="flex-shrink-0">
+        <PageHeader
+          title="음성 질문"
+          icon={Mic}
+          description={
+            micPermission === "granted"
+              ? "마이크 버튼을 눌러 음성으로 질문하세요"
+              : "음성 질문을 위해 마이크 권한이 필요합니다"
+          }
+          gradient="cyan"
+          badges={[
+            {
+              label: "음성 전용",
+              icon: Zap,
+              color:
+                "bg-green-500/20 text-primary-foreground border-green-500/30",
+            },
+            ...(micPermission === "granted"
+              ? [
+                  {
+                    label: "허용됨",
+                    icon: ShieldCheck,
+                    color:
+                      "bg-green-500/20 text-primary-foreground border-green-500/30",
+                  },
+                ]
+              : []),
+          ]}
+        />
       </div>
 
-      <div className="flex-1 flex flex-col justify-center p-6">
+      <div className="flex-1 flex flex-col md:justify-center justify-start p-6 md:pt-6 pt-4 overflow-auto">
         {/* 모바일 상태 표시 */}
         {renderMobileStatus()}
 
@@ -2172,11 +2189,11 @@ export function VoiceQuestion() {
                   <div className="space-y-3">
                     <Badge
                       variant="secondary"
-                      className="text-base px-6 py-2 shadow-sm"
+                      className="text-base py-2 shadow-sm"
                     >
                       {browserSupport.isMobile
-                        ? "🎯 준비됨 - 마이크 버튼을 터치해서 음성으로 질문하세요"
-                        : "🎯 준비됨 - 마이크 버튼을 눌러 음성으로 질문하세요"}
+                        ? "마이크 버튼을 터치해서 질문하세요"
+                        : "마이크 버튼을 눌러 질문하세요"}
                     </Badge>
                     <p className="text-sm text-muted-foreground">
                       음성 전용 모드: AI가 텍스트 없이 음성으로만 답변합니다
@@ -2492,6 +2509,7 @@ export function VoiceQuestion() {
           </Alert>
         )}
       </div>
+      <div className="h-22" />
     </div>
   );
 }

@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { PageHeader } from "./ui/page-header";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { useDeviceDetection } from "../hooks/useDeviceDetection";
 import {
@@ -423,51 +424,21 @@ export function MedicationAnalyzer() {
   return (
     <div className="h-full flex flex-col">
       {/* 헤더 */}
-      <div className="gradient-primary p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-green-500/20"></div>
-        <div className="relative z-10">
-          <h1 className="text-2xl font-bold text-primary-foreground mb-2 flex items-center gap-3">
-            <Pill className="w-6 h-6" />
-            복약정보 AI 분석
-            <Badge
-              variant="outline"
-              className="text-xs bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20"
-            >
-              v2.0
-            </Badge>
-            {deviceInfo.isMobile && (
-              <Badge
-                variant="outline"
-                className="text-xs bg-green-500/20 text-primary-foreground border-green-500/30"
-              >
-                <Smartphone className="w-3 h-3 mr-1" />
-                Mobile
-              </Badge>
-            )}
-          </h1>
-          <p className="text-primary-foreground/80">
-            약물 사진을 업로드하여 AI 분석을 받아보세요
-          </p>
-          {/* API 설정 표시 */}
-          <div className="mt-3 flex items-center gap-2 text-xs text-primary-foreground/70">
-            <Settings className="w-3 h-3" />
-            <span>모드: {apiConfig.currentMode}</span>
-            <span>•</span>
-            <span>API: {apiConfig.apiVersion}</span>
-            <span>•</span>
-            <span>
-              기기:{" "}
-              {deviceInfo.isMobile
-                ? "Mobile"
-                : deviceInfo.isTablet
-                ? "Tablet"
-                : "Desktop"}
-            </span>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="복약정보 분석"
+        icon={Pill}
+        description="약물 사진을 업로드하여 AI 분석을 받아보세요"
+        gradient="green"
+        badges={[
+          {
+            label: "v2.0",
+            color:
+              "bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20",
+          },
+        ]}
+      />
 
-      <div className="flex-1 p-4 space-y-6 overflow-auto pb-20">
+      <div className="flex-1 p-4 space-y-6 overflow-auto">
         {/* 이미지 업로드 영역 */}
         <Card className="card-elevated border-glow">
           <CardContent className="p-6">
@@ -675,6 +646,7 @@ export function MedicationAnalyzer() {
           </Alert>
         )}
       </div>
+      <div className="h-22" />
 
       {/* 숨겨진 파일 입력 */}
       <input

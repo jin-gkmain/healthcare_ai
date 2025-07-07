@@ -101,115 +101,143 @@ export function HealthDashboard() {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1>건강 기록</h1>
-        <Button size="sm">
-          <Plus className="w-4 h-4 mr-2" />
-          기록 추가
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4">
-        {healthStats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-gray-100 ${stat.color}`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        {stat.title}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-semibold">
-                          {stat.value}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {stat.unit}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getTrendIcon(stat.trend)}
-                    {getStatusBadge(stat.status)}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>추세 분석</span>
-            <div className="flex gap-2">
-              <Button
-                variant={
-                  selectedMetric === "blood_pressure" ? "default" : "outline"
-                }
-                size="sm"
-                onClick={() => setSelectedMetric("blood_pressure")}
+    <div className="h-full flex flex-col">
+      {/* 헤더 */}
+      <div className="gradient-primary p-3 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-cyan-500/20"></div>
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-1">
+            <h1 className="text-lg font-bold text-primary-foreground flex items-center gap-2">
+              <Heart className="w-4 h-4" />
+              건강 기록
+            </h1>
+            <div className="flex items-center gap-1">
+              <Badge
+                variant="outline"
+                className="text-xs bg-green-500/20 text-primary-foreground border-green-500/30"
               >
-                혈압
-              </Button>
+                데이터
+              </Badge>
               <Button
-                variant={selectedMetric === "weight" ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedMetric("weight")}
+                variant="outline"
+                className="text-xs border-primary-foreground/30 text-primary-foreground"
               >
-                체중
+                <Plus className="w-3 h-3 mr-1" />
+                기록 추가
               </Button>
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              {selectedMetric === "blood_pressure" ? (
-                <LineChart data={mockData.blood_pressure}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="systolic"
-                    stroke="#8884d8"
-                    name="수축기"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="diastolic"
-                    stroke="#82ca9d"
-                    name="이완기"
-                  />
-                </LineChart>
-              ) : (
-                <LineChart data={mockData.weight}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8884d8"
-                    name="체중 (kg)"
-                  />
-                </LineChart>
-              )}
-            </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
+          <p className="text-sm text-primary-foreground/80">
+            건강 지표를 기록하고 추세를 분석하세요
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 p-4 space-y-6 overflow-auto">
+        <div className="grid grid-cols-1 gap-4">
+          {healthStats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-lg bg-gray-100 ${stat.color}`}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          {stat.title}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-semibold">
+                            {stat.value}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {stat.unit}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getTrendIcon(stat.trend)}
+                      {getStatusBadge(stat.status)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>추세 분석</span>
+              <div className="flex gap-2">
+                <Button
+                  variant={
+                    selectedMetric === "blood_pressure" ? "default" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setSelectedMetric("blood_pressure")}
+                >
+                  혈압
+                </Button>
+                <Button
+                  variant={selectedMetric === "weight" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedMetric("weight")}
+                >
+                  체중
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                {selectedMetric === "blood_pressure" ? (
+                  <LineChart data={mockData.blood_pressure}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="systolic"
+                      stroke="#8884d8"
+                      name="수축기"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="diastolic"
+                      stroke="#82ca9d"
+                      name="이완기"
+                    />
+                  </LineChart>
+                ) : (
+                  <LineChart data={mockData.weight}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#8884d8"
+                      name="체중 (kg)"
+                    />
+                  </LineChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

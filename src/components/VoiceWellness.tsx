@@ -185,14 +185,14 @@ export function VoiceWellness() {
   return (
     <div className="h-full flex flex-col">
       {/* 헤더 */}
-      <div className="gradient-primary p-6 relative overflow-hidden">
+      <div className="gradient-primary p-3 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-green-500/20"></div>
         <div className="relative z-10">
-          <h1 className="text-2xl font-bold text-primary-foreground mb-2 flex items-center gap-3">
-            <Mic className="w-6 h-6" />
+          <h1 className="text-lg font-bold text-primary-foreground mb-1 flex items-center gap-2">
+            <Mic className="w-4 h-4" />
             음성 웰니스 분석
           </h1>
-          <p className="text-primary-foreground/80">
+          <p className="text-sm text-primary-foreground/80">
             음성을 통해 스트레스와 감정 상태를 분석해보세요
           </p>
         </div>

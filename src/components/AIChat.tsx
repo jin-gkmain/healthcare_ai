@@ -30,6 +30,7 @@ import { Slider } from "./ui/slider";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { Separator } from "./ui/separator";
+import { PageHeader } from "./ui/page-header";
 import {
   fetchChatbotResponseStream,
   fetchChatbotResponse,
@@ -587,28 +588,29 @@ export function AIChat() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* 헤더 */}
-      <div className="gradient-primary p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-purple-500/20"></div>
-        <div className="relative z-10 flex items-center gap-4">
+      <PageHeader
+        title="AI 상담"
+        description="전문 의료 AI가 24시간 상담해드립니다"
+        icon={Bot}
+        gradient="purple"
+        badges={[
+          { label: "24시간", icon: Sparkles, color: "yellow" },
+          { label: "음성 지원", icon: Volume2, color: "green" },
+        ]}
+      >
+        <div className="flex items-center gap-2 mt-2">
           <div className="relative">
-            <Avatar className="w-10 h-10 border-2 border-primary-foreground/20">
+            <Avatar className="w-6 h-6 border-2 border-primary-foreground/20">
               <AvatarFallback className="bg-primary-foreground/10 text-primary-foreground border border-primary-foreground/20">
-                <Bot className="w-5 h-5" />
+                <Bot className="w-3 h-3" />
               </AvatarFallback>
             </Avatar>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-primary animate-pulse"></div>
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-primary animate-pulse"></div>
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold text-primary-foreground flex items-center gap-2">
-              AI 건강 상담
-              <Sparkles className="w-5 h-5 text-yellow-300" />
-            </h1>
-            <p className="text-sm text-primary-foreground/80">
-              전문 의료 AI가 24시간 상담해드립니다
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-1">
             {/* TTS 컨트롤 */}
             {ttsSupported && ttsSettings.enabled && (
               <div className="flex items-center gap-2">
@@ -888,7 +890,7 @@ export function AIChat() {
             </Dialog>
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       {/* 채팅 영역 - 네비게이션 공간 확보 */}
       <div className="flex-1 overflow-hidden">

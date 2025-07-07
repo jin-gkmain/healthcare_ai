@@ -149,7 +149,7 @@ export function Navigation({
     <>
       {/* 하단 고정 네비게이션 */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 backdrop-blur-xl bg-background/90">
-        <div className="grid grid-cols-5 gap-1 px-2 py-1">
+        <div className="flex w-full gap-1 px-2 py-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -158,7 +158,7 @@ export function Navigation({
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`relative p-3 rounded-lg transition-all duration-300 flex flex-col items-center gap-1 ${
+                className={`relative w-full p-3 transition-all duration-300 flex flex-col items-center gap-1 ${
                   isActive
                     ? "bg-primary/10 text-primary"
                     : "text-muted-foreground active:bg-muted/50"

@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { IntroPage } from './components/IntroPage';
-import { Navigation } from './components/Navigation';
-import { AIChat } from './components/AIChat';
-import { MedicationAnalyzer } from './components/MedicationAnalyzer';
-import { VoiceQuestion } from './components/VoiceQuestion';
-import { SymptomChecker } from './components/SymptomChecker';
-import { PlatformGuide } from './components/PlatformGuide';
-import { useDeviceDetection } from './hooks/useDeviceDetection';
+import { useState } from "react";
+import { IntroPage } from "./components/IntroPage";
+import { Navigation } from "./components/Navigation";
+import { AIChat } from "./components/AIChat";
+import { MedicationAnalyzer } from "./components/MedicationAnalyzer";
+import { VoiceQuestion } from "./components/VoiceQuestion";
+import { SymptomChecker } from "./components/SymptomChecker";
+import { PlatformGuide } from "./components/PlatformGuide";
+import { useDeviceDetection } from "./hooks/useDeviceDetection";
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState("chat");
   const deviceInfo = useDeviceDetection();
 
   const handleEnterApp = () => {
@@ -27,16 +27,23 @@ export default function App() {
 
   const renderActiveComponent = () => {
     switch (activeTab) {
-      case 'chat':
+      case "chat":
         return <AIChat />;
-      case 'medication':
+      case "medication":
         return <MedicationAnalyzer />;
-      case 'voice':
+      case "voice":
         return <VoiceQuestion />;
-      case 'symptoms':
-        return <SymptomChecker onNavigate={handleTabChange} deviceInfo={deviceInfo} />;
-      case 'guide':
-        return <PlatformGuide onNavigate={handleTabChange} deviceInfo={deviceInfo} />;
+      case "symptoms":
+        return (
+          <SymptomChecker
+            onNavigate={handleTabChange}
+            deviceInfo={deviceInfo}
+          />
+        );
+      case "guide":
+        return (
+          <PlatformGuide onNavigate={handleTabChange} deviceInfo={deviceInfo} />
+        );
       default:
         return <AIChat />;
     }
@@ -65,8 +72,8 @@ export default function App() {
           {/* 데스크톱: 상단 네비게이션 */}
           {deviceInfo.isDesktop && (
             <div className="flex-shrink-0">
-              <Navigation 
-                activeTab={activeTab} 
+              <Navigation
+                activeTab={activeTab}
                 onTabChange={handleTabChange}
                 onLogoClick={handleLogoClick}
                 isDesktop={true}
@@ -75,9 +82,11 @@ export default function App() {
           )}
 
           {/* 컨텐츠 영역 */}
-          <div className={`flex-1 overflow-hidden ${
-            deviceInfo.isDesktop ? 'pt-0' : 'pb-0'
-          }`}>
+          <div
+            className={`flex-1 overflow-auto ${
+              deviceInfo.isDesktop ? "pt-0" : "pb-0"
+            }`}
+          >
             <div className="h-full transition-all duration-300 ease-in-out">
               {renderActiveComponent()}
             </div>
@@ -86,8 +95,8 @@ export default function App() {
           {/* 모바일/태블릿: 하단 네비게이션 */}
           {!deviceInfo.isDesktop && (
             <div className="flex-shrink-0">
-              <Navigation 
-                activeTab={activeTab} 
+              <Navigation
+                activeTab={activeTab}
                 onTabChange={handleTabChange}
                 onLogoClick={handleLogoClick}
                 isDesktop={false}
