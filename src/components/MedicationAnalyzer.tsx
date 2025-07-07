@@ -27,7 +27,12 @@ import {
   getMedicationAPIConfig,
 } from "@/services/medicationAPI";
 
-import type { MedicationAPIResponse, Medicine, Disease } from "@/types";
+import type {
+  MedicationAPIResponse,
+  Medicine,
+  Disease,
+  FormattedMedicationResponse,
+} from "@/types";
 
 export function MedicationAnalyzer() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -36,7 +41,7 @@ export function MedicationAnalyzer() {
   const [rawAPIResponse, setRawAPIResponse] =
     useState<MedicationAPIResponse | null>(null);
   const [formattedResult, setFormattedResult] =
-    useState<MedicationAPIResponse | null>(null);
+    useState<FormattedMedicationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -228,16 +233,18 @@ export function MedicationAnalyzer() {
               >
                 {statusInfo.badge}
               </Badge>
-              {formattedResult?.totalMedicines > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  약물 {formattedResult?.totalMedicines}개
-                </Badge>
-              )}
-              {formattedResult?.totalDiseases > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  질병 {formattedResult?.totalDiseases}개
-                </Badge>
-              )}
+              {formattedResult?.totalMedicines &&
+                formattedResult.totalMedicines > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    약물 {formattedResult.totalMedicines}개
+                  </Badge>
+                )}
+              {formattedResult?.totalDiseases &&
+                formattedResult.totalDiseases > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    질병 {formattedResult.totalDiseases}개
+                  </Badge>
+                )}
             </div>
           </div>
           <div className="flex items-center justify-between mt-2">

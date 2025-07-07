@@ -44,7 +44,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible";
-import { fetchVoiceResponse } from "../../../ai_health_care3/src/services/chatAPI";
+import { fetchVoiceResponse } from "../services/chatAPI";
 
 // 마이크 권한 상태 타입
 type PermissionState = "granted" | "denied" | "prompt" | "unknown";
@@ -84,6 +84,14 @@ interface SpeechRecognitionResult {
 interface SpeechRecognitionAlternative {
   transcript: string;
   confidence: number;
+}
+
+// Window 인터페이스 확장
+declare global {
+  interface Window {
+    webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+    SpeechRecognition?: new () => SpeechRecognitionInstance;
+  }
 }
 
 // 모바일 브라우저 감지 타입
@@ -137,8 +145,9 @@ export function VoiceQuestion() {
   // Web API 상태
   const [recognition, setRecognition] =
     useState<SpeechRecognitionInstance | null>(null);
-  const [currentUtterance, setCurrentUtterance] =
-    useState<SpeechSynthesisUtterance | null>(null);
+  const [, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(
+    null
+  );
   const [browserSupport, setBrowserSupport] = useState<BrowserSupport | null>(
     null
   );
@@ -633,11 +642,12 @@ export function VoiceQuestion() {
         }
 
         return "granted";
-      } catch (error: any) {
-        console.error("❌ 마이크 권한 거부됨 (모바일):", error.name);
+      } catch (error: unknown) {
+        const err = error as { name?: string };
+        console.error("❌ 마이크 권한 거부됨 (모바일):", err.name);
         if (
-          error.name === "NotAllowedError" ||
-          error.name === "PermissionDeniedError"
+          err.name === "NotAllowedError" ||
+          err.name === "PermissionDeniedError"
         ) {
           setMicPermission("denied");
           setIsCheckingPermission(false);
@@ -651,7 +661,7 @@ export function VoiceQuestion() {
 
   // 전역 이벤트 리스너 설정 (모바일 최적화)
   useEffect(() => {
-    const handleGlobalMouseUp = (e: MouseEvent) => {
+    const handleGlobalMouseUp = () => {
       if (isMouseDownRef.current) {
         console.log("🖱️ 전역 마우스 UP 감지 (모바일)");
         isMouseDownRef.current = false;
@@ -669,7 +679,7 @@ export function VoiceQuestion() {
       }
     };
 
-    const handleGlobalTouchEnd = (e: TouchEvent) => {
+    const handleGlobalTouchEnd = () => {
       if (isTouchActiveRef.current) {
         console.log("👆 전역 터치 END 감지 (모바일)");
 
@@ -677,7 +687,7 @@ export function VoiceQuestion() {
         if ("vibrate" in navigator) {
           try {
             navigator.vibrate(50); // 짧은 진동
-          } catch (err) {
+          } catch {
             console.log("진동 지원 안됨");
           }
         }
@@ -697,7 +707,7 @@ export function VoiceQuestion() {
       }
     };
 
-    const handleGlobalTouchCancel = (e: TouchEvent) => {
+    const handleGlobalTouchCancel = () => {
       if (isTouchActiveRef.current) {
         console.log("👆 전역 터치 CANCEL 감지 (모바일)");
         isTouchActiveRef.current = false;
@@ -733,180 +743,6 @@ export function VoiceQuestion() {
     };
   }, [isListening]);
 
-  // 음성 인식 초기화 함수 분리
-  const initializeSpeechRecognition = useCallback(() => {
-    if (!browserSupport?.speechRecognition || micPermission !== "granted") {
-      console.log("음성 인식 초기화 조건 불충족");
-      return;
-    }
-
-    const SpeechRecognition =
-      (
-        window as unknown as {
-          webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
-          SpeechRecognition?: new () => SpeechRecognitionInstance;
-        }
-      ).webkitSpeechRecognition ||
-      (
-        window as unknown as {
-          webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
-          SpeechRecognition?: new () => SpeechRecognitionInstance;
-        }
-      ).SpeechRecognition;
-
-    if (!SpeechRecognition) {
-      console.error("SpeechRecognition not available");
-      return;
-    }
-
-    const recognitionInstance = new SpeechRecognition();
-
-    // 모바일 최적화 음성 인식 설정
-    recognitionInstance.continuous = true;
-    recognitionInstance.interimResults = true;
-    recognitionInstance.lang = voiceSettings.lang;
-    recognitionInstance.maxAlternatives = 1;
-
-    // 모바일 성능 최적화
-    if (browserSupport.isMobile) {
-      recognitionInstance.continuous = true; // 모바일에서 더 안정적
-      recognitionInstance.interimResults = true;
-    }
-
-    // 음성 인식 결과 처리
-    recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
-      console.log(
-        "📝 음성 인식 결과 이벤트 (모바일):",
-        event.results.length,
-        "개 결과"
-      );
-
-      let interimTranscript = "";
-      let finalTranscriptText = "";
-
-      for (let i = 0; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        console.log(
-          `📝 결과 ${i}: "${transcript}" (isFinal: ${event.results[i].isFinal})`
-        );
-
-        if (event.results[i].isFinal) {
-          finalTranscriptText += transcript;
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-
-      const fullTranscript = finalTranscriptText + interimTranscript;
-      currentTranscriptRef.current = fullTranscript;
-      setTranscription(fullTranscript);
-
-      if (finalTranscriptText) {
-        finalTranscriptRef.current += finalTranscriptText;
-        setFinalTranscript((prev) => prev + finalTranscriptText);
-        console.log(
-          "✅ 최종 확정 텍스트 누적 (모바일):",
-          finalTranscriptRef.current
-        );
-      }
-    };
-
-    // 음성 인식 시작
-    recognitionInstance.onstart = () => {
-      console.log("🎤 음성 인식 시작됨 (모바일)");
-      setIsListening(true);
-      setError(null);
-
-      setTranscription("");
-      setFinalTranscript("");
-      currentTranscriptRef.current = "";
-      finalTranscriptRef.current = "";
-      console.log("🧹 음성 인식 텍스트 초기화 완료 (모바일)");
-    };
-
-    // 음성 인식 종료
-    recognitionInstance.onend = () => {
-      console.log("🎤 음성 인식 종료됨 (모바일)");
-      setIsListening(false);
-
-      if (shouldProcessRef.current) {
-        console.log("🚀 API 호출 조건 확인 중... (모바일)");
-
-        let textToProcess = "";
-
-        if (finalTranscriptRef.current.trim()) {
-          textToProcess = finalTranscriptRef.current.trim();
-          console.log("✅ 최종 확정 텍스트 사용 (모바일):", textToProcess);
-        } else if (currentTranscriptRef.current.trim()) {
-          textToProcess = currentTranscriptRef.current.trim();
-          console.log("✅ 현재 전체 텍스트 사용 (모바일):", textToProcess);
-        } else if (finalTranscript.trim()) {
-          textToProcess = finalTranscript.trim();
-          console.log("✅ 상태 finalTranscript 사용 (모바일):", textToProcess);
-        } else if (transcription.trim()) {
-          textToProcess = transcription.trim();
-          console.log("✅ 상태 transcription 사용 (모바일):", textToProcess);
-        }
-
-        if (textToProcess) {
-          console.log("🚀 음성 API 호출 시작 (모바일):", textToProcess);
-          processVoiceQuestion(textToProcess);
-        } else {
-          console.warn("❌ 처리할 텍스트가 없음 (모바일)");
-          setError("음성이 인식되지 않았습니다. 더 명확하게 말씀해 주세요.");
-        }
-
-        shouldProcessRef.current = false;
-      }
-    };
-
-    // 음성 인식 오류 처리 (모바일 최적화)
-    recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("❌ 음성 인식 오류 (모바일):", event.error, event);
-
-      let errorMessage = "음성 인식 오류가 발생했습니다.";
-      switch (event.error) {
-        case "no-speech":
-          errorMessage = browserSupport.isMobile
-            ? "음성이 감지되지 않았습니다. 마이크에 가까이 대고 다시 시도해주세요."
-            : "음성이 감지되지 않았습니다. 다시 시도해주세요.";
-          break;
-        case "audio-capture":
-          errorMessage = "마이크 접근 권한이 필요합니다.";
-          break;
-        case "not-allowed":
-          errorMessage = browserSupport.isMobile
-            ? "마이크 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요."
-            : "마이크 권한이 거부되었습니다. 설정에서 허용해주세요.";
-          setMicPermission("denied");
-          break;
-        case "network":
-          errorMessage = browserSupport.isMobile
-            ? "네트워크 연결을 확인해주세요. Wi-Fi 또는 모바일 데이터를 확인하세요."
-            : "네트워크 오류가 발생했습니다.";
-          break;
-        case "aborted":
-          console.log("👆 사용자가 음성 인식을 중단했습니다 (모바일).");
-          return;
-      }
-
-      setError(errorMessage);
-      setIsListening(false);
-      shouldProcessRef.current = false;
-    };
-
-    setRecognition(recognitionInstance);
-    recognitionRef.current = recognitionInstance;
-    console.log("🎤 음성 인식 초기화 완료 (새로운 인스턴스)");
-  }, [
-    browserSupport,
-    micPermission,
-    voiceSettings.lang,
-    finalTranscript,
-    transcription,
-    processVoiceQuestion,
-  ]);
-
   // 컴포넌트 마운트 시 권한 확인
   useEffect(() => {
     const initializePermissions = async () => {
@@ -940,15 +776,175 @@ export function VoiceQuestion() {
 
     // 마이크 권한이 허용된 경우에만 음성 인식 초기화
     if (micPermission === "granted" && browserSupport.speechRecognition) {
-      initializeSpeechRecognition();
+      const SpeechRecognition =
+        (
+          window as unknown as {
+            webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+            SpeechRecognition?: new () => SpeechRecognitionInstance;
+          }
+        ).webkitSpeechRecognition ||
+        (
+          window as unknown as {
+            webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
+            SpeechRecognition?: new () => SpeechRecognitionInstance;
+          }
+        ).SpeechRecognition;
+
+      if (!SpeechRecognition) {
+        console.error("SpeechRecognition을 사용할 수 없습니다.");
+        return;
+      }
+
+      const recognitionInstance = new SpeechRecognition();
+
+      // 모바일 최적화 음성 인식 설정
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = voiceSettings.lang;
+      recognitionInstance.maxAlternatives = 1;
+
+      // 모바일 성능 최적화
+      if (browserSupport.isMobile) {
+        recognitionInstance.continuous = true; // 모바일에서 더 안정적
+        recognitionInstance.interimResults = true;
+      }
+
+      // 음성 인식 결과 처리
+      recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
+        console.log(
+          "📝 음성 인식 결과 이벤트 (모바일):",
+          event.results.length,
+          "개 결과"
+        );
+
+        let interimTranscript = "";
+        let finalTranscriptText = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          console.log(
+            `📝 결과 ${i}: "${transcript}" (isFinal: ${event.results[i].isFinal})`
+          );
+
+          if (event.results[i].isFinal) {
+            finalTranscriptText += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        const fullTranscript = finalTranscriptText + interimTranscript;
+        currentTranscriptRef.current = fullTranscript;
+        setTranscription(fullTranscript);
+
+        if (finalTranscriptText) {
+          finalTranscriptRef.current += finalTranscriptText;
+          setFinalTranscript((prev) => prev + finalTranscriptText);
+          console.log(
+            "✅ 최종 확정 텍스트 누적 (모바일):",
+            finalTranscriptRef.current
+          );
+        }
+      };
+
+      // 음성 인식 시작
+      recognitionInstance.onstart = () => {
+        console.log("🎤 음성 인식 시작됨 (모바일)");
+        setIsListening(true);
+        setError(null);
+
+        setTranscription("");
+        setFinalTranscript("");
+        currentTranscriptRef.current = "";
+        finalTranscriptRef.current = "";
+        console.log("🧹 음성 인식 텍스트 초기화 완료 (모바일)");
+      };
+
+      // 음성 인식 종료
+      recognitionInstance.onend = () => {
+        console.log("🎤 음성 인식 종료됨 (모바일)");
+        setIsListening(false);
+
+        if (shouldProcessRef.current) {
+          console.log("🚀 API 호출 조건 확인 중... (모바일)");
+
+          let textToProcess = "";
+
+          if (finalTranscriptRef.current.trim()) {
+            textToProcess = finalTranscriptRef.current.trim();
+            console.log("✅ 최종 확정 텍스트 사용 (모바일):", textToProcess);
+          } else if (currentTranscriptRef.current.trim()) {
+            textToProcess = currentTranscriptRef.current.trim();
+            console.log("✅ 현재 전체 텍스트 사용 (모바일):", textToProcess);
+          } else if (finalTranscript.trim()) {
+            textToProcess = finalTranscript.trim();
+            console.log(
+              "✅ 상태 finalTranscript 사용 (모바일):",
+              textToProcess
+            );
+          } else if (transcription.trim()) {
+            textToProcess = transcription.trim();
+            console.log("✅ 상태 transcription 사용 (모바일):", textToProcess);
+          }
+
+          if (textToProcess) {
+            console.log("🚀 음성 API 호출 시작 (모바일):", textToProcess);
+            processVoiceQuestion(textToProcess);
+          } else {
+            console.warn("❌ 처리할 텍스트가 없음 (모바일)");
+            setError("음성이 인식되지 않았습니다. 더 명확하게 말씀해 주세요.");
+          }
+
+          shouldProcessRef.current = false;
+        }
+      };
+
+      // 음성 인식 오류 처리 (모바일 최적화)
+      recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error("❌ 음성 인식 오류 (모바일):", event.error, event);
+
+        let errorMessage = "음성 인식 오류가 발생했습니다.";
+        switch (event.error) {
+          case "no-speech":
+            errorMessage = browserSupport.isMobile
+              ? "음성이 감지되지 않았습니다. 마이크에 가까이 대고 다시 시도해주세요."
+              : "음성이 감지되지 않았습니다. 다시 시도해주세요.";
+            break;
+          case "audio-capture":
+            errorMessage = "마이크 접근 권한이 필요합니다.";
+            break;
+          case "not-allowed":
+            errorMessage = browserSupport.isMobile
+              ? "마이크 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요."
+              : "마이크 권한이 거부되었습니다. 설정에서 허용해주세요.";
+            setMicPermission("denied");
+            break;
+          case "network":
+            errorMessage = browserSupport.isMobile
+              ? "네트워크 연결을 확인해주세요. Wi-Fi 또는 모바일 데이터를 확인하세요."
+              : "네트워크 오류가 발생했습니다.";
+            break;
+          case "aborted":
+            console.log("👆 사용자가 음성 인식을 중단했습니다 (모바일).");
+            return;
+        }
+
+        setError(errorMessage);
+        setIsListening(false);
+        shouldProcessRef.current = false;
+      };
+
+      setRecognition(recognitionInstance);
+      recognitionRef.current = recognitionInstance;
+      console.log("🎤 음성 인식 초기화 완료 (모바일)");
     }
 
     return () => {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch (error) {
-          console.log("🧹 Recognition cleanup (모바일):", error);
+        } catch (e) {
+          console.log("🧹 Recognition cleanup (모바일):", e);
         }
       }
       if (longPressTimerRef.current) {
@@ -958,116 +954,106 @@ export function VoiceQuestion() {
         clearTimeout(gestureTimeoutRef.current);
       }
     };
-  }, [micPermission, browserSupport, initializeSpeechRecognition]);
+  }, [micPermission, browserSupport, voiceSettings.lang]);
 
   // 강화된 음성 질문 처리 함수 (모바일 공통)
-  const processVoiceQuestion = useCallback(
-    async (question: string) => {
-      if (!question.trim()) {
-        console.warn("❌ 빈 질문으로 API 호출 시도 (모바일)");
-        return;
+  const processVoiceQuestion = async (question: string) => {
+    if (!question.trim()) {
+      console.warn("❌ 빈 질문으로 API 호출 시도 (모바일)");
+      return;
+    }
+
+    const platform = browserSupport?.isIOS
+      ? "iOS"
+      : browserSupport?.isAndroid
+      ? "Android"
+      : "Mobile";
+    console.log(`📱 ${platform} 음성 질문 처리 시작:`, question);
+    setIsProcessing(true);
+    setError(null);
+    setLastQuestion(question);
+    setSpeechPlaybackFailed(false);
+    setManualPlayEnabled(false);
+
+    setTranscription("");
+    setFinalTranscript("");
+    currentTranscriptRef.current = "";
+    finalTranscriptRef.current = "";
+
+    try {
+      console.log("📞 fetchVoiceResponse 호출... (모바일)");
+
+      // 강화된 사용자 제스처 유지 (API 호출 중에도)
+      if (browserSupport?.isMobile) {
+        maintainUserGesture();
+        console.log(`📱 ${platform} API 호출 중 사용자 제스처 유지 활성화`);
       }
 
-      const platform = browserSupport?.isIOS
-        ? "iOS"
-        : browserSupport?.isAndroid
-        ? "Android"
-        : "Mobile";
-      console.log(`📱 ${platform} 음성 질문 처리 시작:`, question);
-      setIsProcessing(true);
-      setError(null);
-      setLastQuestion(question);
-      setSpeechPlaybackFailed(false);
-      setManualPlayEnabled(false);
+      const aiResponse = await fetchVoiceResponse(question);
 
-      setTranscription("");
-      setFinalTranscript("");
-      currentTranscriptRef.current = "";
-      finalTranscriptRef.current = "";
+      console.log(
+        `✅ ${platform} 음성 AI 답변 받음:`,
+        aiResponse.substring(0, 100) + "..."
+      );
 
-      try {
-        console.log("📞 fetchVoiceResponse 호출... (모바일)");
+      setIsProcessing(false);
+      setLastResponse(aiResponse); // 응답 저장
 
-        // 강화된 사용자 제스처 유지 (API 호출 중에도)
-        if (browserSupport?.isMobile) {
-          maintainUserGesture();
-          console.log(`📱 ${platform} API 호출 중 사용자 제스처 유지 활성화`);
-        }
-
-        const aiResponse = await fetchVoiceResponse(question);
-
+      // 모바일에서 강화된 자동 음성 재생 시도
+      if (browserSupport?.isMobile) {
+        console.log(`📱 ${platform} 강화된 음성 재생 시도`);
         console.log(
-          `✅ ${platform} 음성 AI 답변 받음:`,
-          aiResponse.substring(0, 100) + "..."
+          `📱 ${platform} - 사용자 제스처 활성:`,
+          userGestureActiveRef.current
         );
+        console.log(
+          `📱 ${platform} - 음성 합성 활성화:`,
+          mobileSpeechActivatedRef.current
+        );
+        console.log(`📱 ${platform} - 음성 준비 상태:`, mobileSpeechReady);
 
-        setIsProcessing(false);
-        setLastResponse(aiResponse); // 응답 저장
-
-        // 모바일에서 강화된 자동 음성 재생 시도
-        if (browserSupport?.isMobile) {
-          console.log(`📱 ${platform} 강화된 음성 재생 시도`);
-          console.log(
-            `📱 ${platform} - 사용자 제스처 활성:`,
-            userGestureActiveRef.current
-          );
-          console.log(
-            `📱 ${platform} - 음성 합성 활성화:`,
-            mobileSpeechActivatedRef.current
-          );
-          console.log(`📱 ${platform} - 음성 준비 상태:`, mobileSpeechReady);
-
-          // 제스처가 활성화되어 있고 음성이 준비되었다면 즉시 재생
-          if (userGestureActiveRef.current) {
-            // 음성이 아직 활성화되지 않았다면 즉시 활성화
-            if (!mobileSpeechActivatedRef.current) {
-              console.log(`📱 ${platform} 즉시 음성 활성화 시도`);
-              const activated = await fullyActivateMobileSpeech();
-              if (!activated) {
-                console.warn(`📱 ${platform} 즉시 음성 활성화 실패`);
-              }
+        // 제스처가 활성화되어 있고 음성이 준비되었다면 즉시 재생
+        if (userGestureActiveRef.current) {
+          // 음성이 아직 활성화되지 않았다면 즉시 활성화
+          if (!mobileSpeechActivatedRef.current) {
+            console.log(`📱 ${platform} 즉시 음성 활성화 시도`);
+            const activated = await fullyActivateMobileSpeech();
+            if (!activated) {
+              console.warn(`📱 ${platform} 즉시 음성 활성화 실패`);
             }
+          }
 
-            // 강화된 즉시 재생
-            const success = await speakTextWithGesture(aiResponse);
-            if (!success) {
-              console.warn(
-                `📱 ${platform} 강화된 자동 재생 실패, 수동 모드 활성화`
-              );
-              setSpeechPlaybackFailed(true);
-              setManualPlayEnabled(true);
-            }
-          } else {
-            console.log(`📱 ${platform} 사용자 제스처 만료, 수동 모드 활성화`);
+          // 강화된 즉시 재생
+          const success = await speakTextWithGesture(aiResponse);
+          if (!success) {
+            console.warn(
+              `📱 ${platform} 강화된 자동 재생 실패, 수동 모드 활성화`
+            );
             setSpeechPlaybackFailed(true);
             setManualPlayEnabled(true);
           }
         } else {
-          // 데스크톱에서는 일반 자동 재생
-          setTimeout(() => {
-            console.log("🔊 음성 재생 시작 (데스크톱)");
-            speakText(aiResponse);
-          }, 100);
+          console.log(`📱 ${platform} 사용자 제스처 만료, 수동 모드 활성화`);
+          setSpeechPlaybackFailed(true);
+          setManualPlayEnabled(true);
         }
-      } catch (err) {
-        console.error(`❌ ${platform} 음성 AI 응답 오류:`, err);
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "음성 AI 서버에 연결할 수 없습니다.";
-        setError(`음성 응답 오류: ${errorMessage}`);
-        setIsProcessing(false);
+      } else {
+        // 데스크톱에서는 일반 자동 재생
+        setTimeout(() => {
+          console.log("🔊 음성 재생 시작 (데스크톱)");
+          speakText(aiResponse);
+        }, 100);
       }
-    },
-    [
-      browserSupport?.isIOS,
-      browserSupport?.isAndroid,
-      browserSupport?.isMobile,
-      maintainUserGesture,
-      mobileSpeechReady,
-      fullyActivateMobileSpeech,
-    ]
-  );
+    } catch (err) {
+      console.error(`❌ ${platform} 음성 AI 응답 오류:`, err);
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "음성 AI 서버에 연결할 수 없습니다.";
+      setError(`음성 응답 오류: ${errorMessage}`);
+      setIsProcessing(false);
+    }
+  };
 
   // 강화된 사용자 제스처 기반 음성 재생 함수 (모바일 공통)
   const speakTextWithGesture = useCallback(
@@ -1164,7 +1150,12 @@ export function VoiceQuestion() {
         // 즉시 재생을 위한 Promise
         return new Promise((resolve) => {
           let resolved = false;
-          let startTimeout: NodeJS.Timeout | null = null;
+          let startTimeout: NodeJS.Timeout = setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              resolve(false);
+            }
+          }, 2000);
 
           utterance.onstart = () => {
             if (!resolved) {
@@ -1347,7 +1338,7 @@ export function VoiceQuestion() {
             const platform = browserSupport.isIOS ? "iOS" : "Android";
             console.log(`🔊 ${platform} 한국어 음성 선택:`, koreanVoice.name);
           }
-        } catch (voiceError) {
+        } catch {
           console.log("🔊 음성 선택 오류 (모바일), 기본 음성 사용");
         }
       }
@@ -1588,7 +1579,7 @@ export function VoiceQuestion() {
       if ("vibrate" in navigator) {
         try {
           navigator.vibrate(30); // 시작 진동
-        } catch (err) {
+        } catch {
           console.log("진동 지원 안됨");
         }
       }
@@ -1636,7 +1627,7 @@ export function VoiceQuestion() {
           if ("vibrate" in navigator) {
             try {
               navigator.vibrate(50); // 시작 확인 진동
-            } catch (err) {
+            } catch {
               console.log("진동 지원 안됨");
             }
           }
@@ -1687,172 +1678,10 @@ export function VoiceQuestion() {
     const permission = await requestMicrophonePermission();
     if (permission === "granted") {
       setIsPermissionModalOpen(false);
-      // 페이지 새로고침 대신 즉시 음성 인식 재초기화
-      setTimeout(() => {
-        // 음성 인식 재초기화 (페이지 새로고침 없이)
-        initializeSpeechRecognition();
-      }, 500);
+      // 페이지 새로고침으로 음성 인식 재초기화
+      window.location.reload();
     }
   };
-
-  // 음성 인식 초기화 함수 분리
-  const initializeSpeechRecognition = useCallback(() => {
-    if (!browserSupport?.speechRecognition || micPermission !== "granted") {
-      console.log("음성 인식 초기화 조건 불충족");
-      return;
-    }
-
-    const SpeechRecognition =
-      (window as any).webkitSpeechRecognition ||
-      (window as any).SpeechRecognition;
-    const recognitionInstance = new SpeechRecognition();
-
-    // 모바일 최적화 음성 인식 설정
-    recognitionInstance.continuous = true;
-    recognitionInstance.interimResults = true;
-    recognitionInstance.lang = voiceSettings.lang;
-    recognitionInstance.maxAlternatives = 1;
-
-    // 모바일 성능 최적화
-    if (browserSupport.isMobile) {
-      recognitionInstance.continuous = true; // 모바일에서 더 안정적
-      recognitionInstance.interimResults = true;
-    }
-
-    // 음성 인식 결과 처리
-    recognitionInstance.onresult = (event: any) => {
-      console.log(
-        "📝 음성 인식 결과 이벤트 (모바일):",
-        event.results.length,
-        "개 결과"
-      );
-
-      let interimTranscript = "";
-      let finalTranscriptText = "";
-
-      for (let i = 0; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        console.log(
-          `📝 결과 ${i}: "${transcript}" (isFinal: ${event.results[i].isFinal})`
-        );
-
-        if (event.results[i].isFinal) {
-          finalTranscriptText += transcript;
-        } else {
-          interimTranscript += transcript;
-        }
-      }
-
-      const fullTranscript = finalTranscriptText + interimTranscript;
-      currentTranscriptRef.current = fullTranscript;
-      setTranscription(fullTranscript);
-
-      if (finalTranscriptText) {
-        finalTranscriptRef.current += finalTranscriptText;
-        setFinalTranscript((prev) => prev + finalTranscriptText);
-        console.log(
-          "✅ 최종 확정 텍스트 누적 (모바일):",
-          finalTranscriptRef.current
-        );
-      }
-    };
-
-    // 음성 인식 시작
-    recognitionInstance.onstart = () => {
-      console.log("🎤 음성 인식 시작됨 (모바일)");
-      setIsListening(true);
-      setError(null);
-
-      setTranscription("");
-      setFinalTranscript("");
-      currentTranscriptRef.current = "";
-      finalTranscriptRef.current = "";
-      console.log("🧹 음성 인식 텍스트 초기화 완료 (모바일)");
-    };
-
-    // 음성 인식 종료
-    recognitionInstance.onend = () => {
-      console.log("🎤 음성 인식 종료됨 (모바일)");
-      setIsListening(false);
-
-      if (shouldProcessRef.current) {
-        console.log("🚀 API 호출 조건 확인 중... (모바일)");
-
-        let textToProcess = "";
-
-        if (finalTranscriptRef.current.trim()) {
-          textToProcess = finalTranscriptRef.current.trim();
-          console.log("✅ 최종 확정 텍스트 사용 (모바일):", textToProcess);
-        } else if (currentTranscriptRef.current.trim()) {
-          textToProcess = currentTranscriptRef.current.trim();
-          console.log("✅ 현재 전체 텍스트 사용 (모바일):", textToProcess);
-        } else if (finalTranscript.trim()) {
-          textToProcess = finalTranscript.trim();
-          console.log("✅ 상태 finalTranscript 사용 (모바일):", textToProcess);
-        } else if (transcription.trim()) {
-          textToProcess = transcription.trim();
-          console.log("✅ 상태 transcription 사용 (모바일):", textToProcess);
-        }
-
-        if (textToProcess) {
-          console.log("🚀 음성 API 호출 시작 (모바일):", textToProcess);
-          processVoiceQuestion(textToProcess);
-        } else {
-          console.warn("❌ 처리할 텍스트가 없음 (모바일)");
-          setError("음성이 인식되지 않았습니다. 더 명확하게 말씀해 주세요.");
-        }
-
-        shouldProcessRef.current = false;
-      }
-    };
-
-    // 음성 인식 오류 처리 (모바일 최적화)
-    recognitionInstance.onerror = (event: any) => {
-      console.error("❌ 음성 인식 오류 (모바일):", event.error, event);
-
-      let errorMessage = "음성 인식 오류가 발생했습니다.";
-      switch (event.error) {
-        case "no-speech":
-          errorMessage = browserSupport.isMobile
-            ? "음성이 감지되지 않았습니다. 마이크에 가까이 대고 다시 시도해주세요."
-            : "음성이 감지되지 않았습니다. 다시 시도해주세요.";
-          break;
-        case "audio-capture":
-          errorMessage = "마이크 접근 권한이 필요합니다.";
-          break;
-        case "not-allowed":
-          errorMessage = browserSupport.isMobile
-            ? "마이크 권한이 거부되었습니다. 브라우저 설정에서 허용해주세요."
-            : "마이크 권한이 거부되었습니다. 설정에서 허용해주세요.";
-          setMicPermission("denied");
-          break;
-        case "network":
-          errorMessage = browserSupport.isMobile
-            ? "네트워크 연결을 확인해주세요. Wi-Fi 또는 모바일 데이터를 확인하세요."
-            : "네트워크 오류가 발생했습니다.";
-          break;
-        case "aborted":
-          console.log("👆 사용자가 음성 인식을 중단했습니다 (모바일).");
-          return;
-      }
-
-      setError(errorMessage);
-      setIsListening(false);
-      shouldProcessRef.current = false;
-    };
-
-    setRecognition(recognitionInstance);
-    recognitionRef.current = recognitionInstance;
-    console.log("🎤 음성 인식 초기화 완료 (새로운 인스턴스)");
-  }, [
-    browserSupport?.speechRecognition,
-    browserSupport?.isMobile,
-    micPermission,
-    voiceSettings.lang,
-    finalTranscript,
-    transcription,
-    processVoiceQuestion,
-  ]);
 
   // 권한 상태에 따른 마이크 버튼 색상 및 아이콘
   const getMicButtonStyle = () => {
@@ -2542,7 +2371,7 @@ export function VoiceQuestion() {
                       <Label className="text-sm font-medium">음성 선택</Label>
                       <Select
                         value={voiceSettings.selectedVoice}
-                        onValueChange={(value: string) =>
+                        onValueChange={(value) =>
                           handleVoiceSettingChange("selectedVoice", value)
                         }
                       >
@@ -2580,7 +2409,7 @@ export function VoiceQuestion() {
                     </Label>
                     <Slider
                       value={[voiceSettings.rate]}
-                      onValueChange={([value]: number[]) =>
+                      onValueChange={([value]) =>
                         handleVoiceSettingChange("rate", value)
                       }
                       min={0.5}
@@ -2597,7 +2426,7 @@ export function VoiceQuestion() {
                     </Label>
                     <Slider
                       value={[voiceSettings.pitch]}
-                      onValueChange={([value]: number[]) =>
+                      onValueChange={([value]) =>
                         handleVoiceSettingChange("pitch", value)
                       }
                       min={0.5}
@@ -2614,7 +2443,7 @@ export function VoiceQuestion() {
                     </Label>
                     <Slider
                       value={[voiceSettings.volume]}
-                      onValueChange={([value]: number[]) =>
+                      onValueChange={([value]) =>
                         handleVoiceSettingChange("volume", value)
                       }
                       min={0.1}

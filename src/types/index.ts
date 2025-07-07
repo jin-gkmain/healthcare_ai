@@ -1,6 +1,6 @@
 export interface ChatMessage {
   id: string;
-  type: 'user' | 'ai';
+  type: "user" | "ai";
   content: string;
   timestamp: Date;
   isStreaming?: boolean;
@@ -57,5 +57,18 @@ export interface MedicationAPIResponse {
     question: string;
     category: string;
   };
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+// formatMedicationResponse 함수의 반환 타입
+export interface FormattedMedicationResponse {
+  hasStructuredData: boolean;
+  formattedText?: string;
+  text?: string;
+  medicines?: Medicine[];
+  diseases?: Disease[];
+  totalMedicines?: number;
+  totalDiseases?: number;
+  rawResponse?: MedicationAPIResponse;
+  [key: string]: unknown;
 }

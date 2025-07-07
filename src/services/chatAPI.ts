@@ -571,7 +571,7 @@ export const fetchVoiceResponse = async (question: string): Promise<string> => {
     }
 
     throw new Error("음성 API 응답에서 answer를 찾을 수 없습니다.");
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("🎤 음성 API 오류:", error);
 
     // 음성 전용 에러 처리 및 폴백

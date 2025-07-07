@@ -1,4 +1,7 @@
-import type { MedicationAPIResponse } from "../types";
+import type {
+  MedicationAPIResponse,
+  FormattedMedicationResponse,
+} from "../types";
 import myAxios from "../utils/myAxios";
 
 // 새로운 응답 타입 정의
@@ -404,7 +407,7 @@ export const analyzeMedicationImage = async (
 // API 응답 포맷팅 함수
 export const formatMedicationResponse = (
   apiResponse: MedicationAPIResponse
-): MedicationAPIResponse => {
+): FormattedMedicationResponse => {
   if (
     (apiResponse.medicine && Array.isArray(apiResponse.medicine)) ||
     (apiResponse.disease && Array.isArray(apiResponse.disease))

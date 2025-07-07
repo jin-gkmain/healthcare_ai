@@ -5,11 +5,7 @@ import {
   Target,
   BookOpen,
   Sparkles,
-  Menu,
-  X,
 } from "lucide-react";
-import { useState } from "react";
-import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 
 interface NavigationProps {
@@ -63,9 +59,6 @@ export function Navigation({
   onLogoClick,
   isDesktop,
 }: NavigationProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] =
-    useState(false);
-
   // 데스크톱 네비게이션
   if (isDesktop) {
     return (
@@ -111,14 +104,10 @@ export function Navigation({
                     <div className="flex items-center gap-2">
                       <Icon
                         className={`w-4 h-4 transition-all duration-300 ${
-                          isActive
-                            ? "scale-110"
-                            : "group-hover:scale-105"
+                          isActive ? "scale-110" : "group-hover:scale-105"
                         }`}
                       />
-                      <span className="text-sm font-medium">
-                        {item.label}
-                      </span>
+                      <span className="text-sm font-medium">{item.label}</span>
                       {item.badge && (
                         <Badge
                           variant="secondary"
@@ -147,9 +136,7 @@ export function Navigation({
 
             {/* 우측 액션 */}
             <div className="flex items-center gap-3">
-              <div className="text-xs text-muted-foreground">
-                AI Healthcare
-              </div>
+              <div className="text-xs text-muted-foreground">AI Healthcare</div>
             </div>
           </div>
         </div>
@@ -203,10 +190,7 @@ export function Navigation({
       {/* 상단 로고 (모바일) */}
       <div className="fixed top-0 left-0 right-0 z-40 border-b border-border/50 backdrop-blur-xl bg-background/90">
         <div className="flex items-center justify-between px-4 py-3">
-          <button
-            onClick={onLogoClick}
-            className="flex items-center gap-2"
-          >
+          <button onClick={onLogoClick} className="flex items-center gap-2">
             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center shadow-lg">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
@@ -223,10 +207,7 @@ export function Navigation({
           <div className="flex items-center gap-2">
             {/* 현재 페이지 표시 */}
             <div className="text-xs text-muted-foreground">
-              {
-                menuItems.find((item) => item.id === activeTab)
-                  ?.label
-              }
+              {menuItems.find((item) => item.id === activeTab)?.label}
             </div>
           </div>
         </div>
